@@ -1,0 +1,20 @@
+.tasksContainer {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1rem;
+  position: relative;
+}
+
+.fab {
+  position: fixed !important;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  
+  @media (min-width: 900px) {
+    bottom: 3rem;
+    right: 3rem;
+  }
+} 

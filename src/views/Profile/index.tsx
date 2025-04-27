@@ -34,6 +34,7 @@ import {
   Star, 
   Check
 } from 'lucide-react';
+import { useColorModeContext } from '../../theme.tsx';
 import styles from './Profile.module.scss';
 
 // Sample user data
@@ -92,14 +93,9 @@ const settingsSections = [
 
 const Profile = () => {
   const theme = useTheme();
-  const [darkMode, setDarkMode] = useState(false);
+  const { toggleColorMode, mode } = useColorModeContext();
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [activeSection, setActiveSection] = useState('Account');
-  
-  // Toggle dark mode
-  const handleDarkModeToggle = () => {
-    setDarkMode(!darkMode);
-  };
   
   // Toggle email notifications
   const handleEmailNotificationsToggle = () => {
@@ -302,8 +298,8 @@ const Profile = () => {
                   <ListItemSecondaryAction>
                     <Switch 
                       edge="end"
-                      checked={darkMode}
-                      onChange={handleDarkModeToggle}
+                      checked={mode === 'dark'}
+                      onChange={toggleColorMode}
                       inputProps={{ 'aria-labelledby': 'dark-mode-switch' }}
                     />
                   </ListItemSecondaryAction>

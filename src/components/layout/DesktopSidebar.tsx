@@ -25,7 +25,7 @@ import {
   Moon,
   Sun
 } from 'lucide-react';
-import { useColorModeContext } from '../../theme';
+import { useColorModeContext } from '../../theme.tsx';
 
 // Sidebar width
 const DRAWER_WIDTH = 260;

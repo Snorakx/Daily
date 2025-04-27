@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useMemo, ReactNode } from 'react';
+import { createContext, useContext, useState, useMemo, ReactNode, useEffect } from 'react';
 import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 import { PaletteMode } from '@mui/material';
@@ -22,6 +22,9 @@ export const useColorModeContext = () => useContext(ColorModeContext);
 interface ThemeProviderProps {
   children: ReactNode;
 }
+
+// Local storage key for theme mode
+const THEME_MODE_KEY = 'theme-mode';
 
 // Theme configuration
 const getDesignTokens = (mode: PaletteMode) => ({
@@ -92,17 +95,27 @@ const getDesignTokens = (mode: PaletteMode) => ({
 
 // Theme provider component
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
-  // Check user's system preference for dark mode
-  const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  // Get stored theme from localStorage or use system preference
+  const getInitialMode = (): PaletteMode => {
+    const storedMode = localStorage.getItem(THEME_MODE_KEY) as PaletteMode | null;
+    if (storedMode === 'light' || storedMode === 'dark') {
+      return storedMode;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  };
   
   // State for the current mode
-  const [mode, setMode] = useState<PaletteMode>(prefersDarkMode ? 'dark' : 'light');
+  const [mode, setMode] = useState<PaletteMode>(getInitialMode);
 
   // Color mode context value
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+        setMode((prevMode) => {
+          const newMode = prevMode === 'light' ? 'dark' : 'light';
+          localStorage.setItem(THEME_MODE_KEY, newMode);
+          return newMode;
+        });
       },
       mode,
     }),
@@ -113,7 +126,7 @@ export const ThemeProvider = ({ children }: ThemeProviderProps) => {
   const theme = useMemo(() => createTheme(getDesignTokens(mode)), [mode]);
 
   // Apply CSS variables for colors
-  useMemo(() => {
+  useEffect(() => {
     document.documentElement.setAttribute('data-theme', mode);
     
     // Update CSS variables

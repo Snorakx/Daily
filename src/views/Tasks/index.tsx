@@ -1,271 +1,144 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Box, 
+  Container, 
   Typography, 
+  Box, 
   Paper, 
-  List, 
-  ListItem, 
-  ListItemText, 
-  ListItemIcon, 
-  Checkbox, 
+  Button, 
   TextField, 
-  InputAdornment, 
-  Chip, 
-  Fab, 
-  Divider,
-  IconButton,
-  Menu,
-  MenuItem
+  Select, 
+  FormControl, 
+  InputLabel,
+  Grid,
+  MenuItem,
+  Tabs,
+  Tab
 } from '@mui/material';
-import { Search, Plus, Filter, Calendar, MoreVertical, Trash2, Edit, Flag } from 'lucide-react';
-import styles from './Tasks.module.scss';
+import AddIcon from '@mui/icons-material/Add';
+import TaskList from '../../components/TaskList';
+import { Task, FilterOption } from '../../types';
 
-// Demo tasks data
-const initialTasks = [
-  { id: 1, text: 'Update project documentation', completed: false, priority: 'high', date: '2023-06-15', project: 'Work' },
-  { id: 2, text: 'Prepare presentation for client meeting', completed: false, priority: 'medium', date: '2023-06-15', project: 'Work' },
-  { id: 3, text: 'Review team performance', completed: true, priority: 'medium', date: '2023-06-14', project: 'Work' },
-  { id: 4, text: 'Grocery shopping for the week', completed: false, priority: 'low', date: '2023-06-16', project: 'Personal' },
-  { id: 5, text: 'Schedule dentist appointment', completed: true, priority: 'medium', date: '2023-06-14', project: 'Personal' },
-  { id: 6, text: 'Pay utility bills', completed: false, priority: 'high', date: '2023-06-16', project: 'Personal' },
-];
-
-// Filter options
-const filterOptions = ['All', 'Completed', 'Active', 'High Priority'];
-
-const Tasks = () => {
-  const [tasks, setTasks] = useState(initialTasks);
-  const [searchText, setSearchText] = useState('');
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+const TasksView: React.FC = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [newTaskText, setNewTaskText] = useState('');
+  const [newTaskPriority, setNewTaskPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [newTaskProject, setNewTaskProject] = useState('');
+  const [activeFilter, setActiveFilter] = useState<FilterOption>('All');
   
-  // Handle search input
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchText(event.target.value);
+  // Simulating data fetching from an API
+  useEffect(() => {
+    // In a real app, this would be an API call
+    const sampleTasks: Task[] = [
+      { id: 1, text: 'Complete project proposal', completed: false, priority: 'high', project: 'Work', date: '2023-12-10' },
+      { id: 2, text: 'Go for a run', completed: true, priority: 'medium', project: 'Personal' },
+      { id: 3, text: 'Buy groceries', completed: false, priority: 'low', project: 'Home' },
+    ];
+    setTasks(sampleTasks);
+  }, []);
+
+  const handleAddTask = () => {
+    if (newTaskText.trim() === '') return;
+    
+    const newTask: Task = {
+      id: Date.now(), // Simple ID generation for demo purposes
+      text: newTaskText,
+      completed: false,
+      priority: newTaskPriority,
+      project: newTaskProject || undefined,
+    };
+    
+    setTasks([...tasks, newTask]);
+    setNewTaskText('');
+    setNewTaskPriority('medium');
+    setNewTaskProject('');
   };
 
-  // Toggle task completion
-  const toggleTaskCompletion = (id: number) => {
+  const handleToggleTask = (id: number) => {
     setTasks(tasks.map(task => 
       task.id === id ? { ...task, completed: !task.completed } : task
     ));
   };
 
-  // Open context menu
-  const handleTaskMenuOpen = (event: React.MouseEvent<HTMLElement>, taskId: number) => {
-    setMenuAnchorEl(event.currentTarget);
-    setSelectedTaskId(taskId);
+  const handleDeleteTask = (id: number) => {
+    setTasks(tasks.filter(task => task.id !== id));
   };
 
-  // Close context menu
-  const handleMenuClose = () => {
-    setMenuAnchorEl(null);
-    setSelectedTaskId(null);
-  };
-
-  // Delete a task
-  const handleDeleteTask = () => {
-    if (selectedTaskId) {
-      setTasks(tasks.filter(task => task.id !== selectedTaskId));
-      handleMenuClose();
-    }
-  };
-
-  // Filter tasks
-  const filteredTasks = tasks.filter(task => {
-    // Apply text search filter
-    const matchesSearch = task.text.toLowerCase().includes(searchText.toLowerCase());
-    
-    // Apply status filter
-    let matchesFilter = true;
-    if (activeFilter === 'Completed') matchesFilter = task.completed;
-    if (activeFilter === 'Active') matchesFilter = !task.completed;
-    if (activeFilter === 'High Priority') matchesFilter = task.priority === 'high';
-
-    return matchesSearch && matchesFilter;
-  });
-
-  // Group tasks by date
-  const groupedTasks: Record<string, typeof tasks> = {};
-  
-  filteredTasks.forEach(task => {
-    if (!groupedTasks[task.date]) {
-      groupedTasks[task.date] = [];
-    }
-    groupedTasks[task.date].push(task);
-  });
-
-  const sortedDates = Object.keys(groupedTasks).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+  const handleFilterChange = (event: React.SyntheticEvent, newValue: FilterOption) => {
+    setActiveFilter(newValue);
   };
 
   return (
-    <div className={styles.tasksContainer}>
-      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h4" component="h1" fontWeight={600}>
-          Tasks
-        </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Chip 
-            icon={<Calendar size={16} />} 
-            label="This Week" 
-            clickable 
-            color="primary" 
-            variant="outlined" 
-          />
-        </Box>
-      </Box>
-      
-      {/* Search and filters */}
-      <Paper elevation={0} sx={{ p: 2, mb: 3, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <TextField
-            placeholder="Search tasks..."
-            variant="outlined"
-            size="small"
-            fullWidth
-            value={searchText}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search size={20} />
-                </InputAdornment>
-              ),
-            }}
-            sx={{ maxWidth: 400 }}
-          />
-          <IconButton>
-            <Filter size={20} />
-          </IconButton>
-        </Box>
-        
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          {filterOptions.map((option) => (
-            <Chip
-              key={option}
-              label={option}
-              onClick={() => setActiveFilter(option)}
-              color={activeFilter === option ? 'primary' : 'default'}
-              variant={activeFilter === option ? 'filled' : 'outlined'}
-              size="small"
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Task Manager
+      </Typography>
+
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" gutterBottom>Add New Task</Typography>
+        <Grid container spacing={2} alignItems="center">
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              label="Task"
+              value={newTaskText}
+              onChange={(e) => setNewTaskText(e.target.value)}
+              placeholder="What needs to be done?"
             />
-          ))}
-        </Box>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 2 }}>
+            <FormControl fullWidth>
+              <InputLabel>Priority</InputLabel>
+              <Select
+                value={newTaskPriority}
+                label="Priority"
+                onChange={(e) => setNewTaskPriority(e.target.value as 'low' | 'medium' | 'high')}
+              >
+                <MenuItem value="low">Low</MenuItem>
+                <MenuItem value="medium">Medium</MenuItem>
+                <MenuItem value="high">High</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 2 }}>
+            <TextField
+              fullWidth
+              label="Project"
+              value={newTaskProject}
+              onChange={(e) => setNewTaskProject(e.target.value)}
+              placeholder="Optional"
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 2 }}>
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleAddTask}
+              disabled={!newTaskText.trim()}
+            >
+              Add
+            </Button>
+          </Grid>
+        </Grid>
       </Paper>
-      
-      {/* Task list grouped by date */}
-      {sortedDates.map((date) => (
-        <Paper 
-          key={date} 
-          elevation={0} 
-          sx={{ 
-            mb: 3, 
-            borderRadius: 2, 
-            overflow: 'hidden',
-            border: '1px solid',
-            borderColor: 'divider'
-          }}
-        >
-          <Box sx={{ 
-            px: 2, 
-            py: 1, 
-            backgroundColor: 'background.default', 
-            borderBottom: '1px solid', 
-            borderColor: 'divider' 
-          }}>
-            <Typography variant="subtitle2">{formatDate(date)}</Typography>
-          </Box>
-          
-          <List disablePadding>
-            {groupedTasks[date].map((task, index) => (
-              <Box key={task.id}>
-                {index > 0 && <Divider />}
-                <ListItem
-                  secondaryAction={
-                    <IconButton edge="end" onClick={(e) => handleTaskMenuOpen(e, task.id)}>
-                      <MoreVertical size={18} />
-                    </IconButton>
-                  }
-                  sx={{ 
-                    pr: 6,
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
-                  }}
-                >
-                  <ListItemIcon>
-                    <Checkbox
-                      edge="start"
-                      checked={task.completed}
-                      onChange={() => toggleTaskCompletion(task.id)}
-                      sx={{
-                        color: task.priority === 'high' ? 'error.main' : 
-                          task.priority === 'medium' ? 'warning.main' : 'success.main',
-                        '&.Mui-checked': {
-                          color: 'primary.main',
-                        },
-                      }}
-                    />
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={task.text}
-                    primaryTypographyProps={{
-                      style: {
-                        textDecoration: task.completed ? 'line-through' : 'none',
-                        color: task.completed ? 'text.secondary' : 'text.primary',
-                      },
-                    }}
-                    secondary={task.project}
-                  />
-                </ListItem>
-              </Box>
-            ))}
-          </List>
-        </Paper>
-      ))}
-      
-      {/* Floating action button to add new task */}
-      <Fab 
-        color="primary" 
-        aria-label="add task" 
-        className={styles.fab}
-      >
-        <Plus />
-      </Fab>
-      
-      {/* Task context menu */}
-      <Menu
-        anchorEl={menuAnchorEl}
-        open={Boolean(menuAnchorEl)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem onClick={handleMenuClose} dense>
-          <ListItemIcon>
-            <Edit size={18} />
-          </ListItemIcon>
-          <ListItemText>Edit</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleMenuClose} dense>
-          <ListItemIcon>
-            <Flag size={18} />
-          </ListItemIcon>
-          <ListItemText>Change Priority</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleDeleteTask} dense sx={{ color: 'error.main' }}>
-          <ListItemIcon sx={{ color: 'error.main' }}>
-            <Trash2 size={18} />
-          </ListItemIcon>
-          <ListItemText>Delete</ListItemText>
-        </MenuItem>
-      </Menu>
-    </div>
+
+      <Box sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+        <Tabs value={activeFilter} onChange={handleFilterChange}>
+          <Tab label="All" value="All" />
+          <Tab label="Active" value="Active" />
+          <Tab label="Completed" value="Completed" />
+          <Tab label="High Priority" value="High Priority" />
+        </Tabs>
+      </Box>
+
+      <TaskList 
+        tasks={tasks}
+        onTaskToggle={handleToggleTask}
+        onTaskDelete={handleDeleteTask}
+        filter={activeFilter}
+      />
+    </Container>
   );
 };
 
-export default Tasks; 
+export default TasksView; 
